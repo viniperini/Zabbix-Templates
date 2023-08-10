@@ -1,0 +1,319 @@
+#
+# Zabbix SNMP Monitoring Template for Aligera AG1600 
+# Please, change the '{$SNMP_COMMUNITY}' value before use it.
+# Be sure that you are using the correct MIB/OIDs. You can download it from the Aligera AG1600 itself via web access.
+# The triggers "name: 'Active Calls Usage High'" and "name: 'Active Calls Usage Very High'" should be configured as a % of yours call licences number.
+# We current have 120 sip to sip licences. 
+# Created by Vinícius Lahm Perini 10/08/2023.
+#
+
+zabbix_export:
+  version: '6.0'
+  date: '2023-08-10T17:43:31Z'
+  groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: 08c90c800124447d87ee019f41de9e01
+      template: 'Aligera SNMP'
+      name: 'Aligera SNMP'
+      groups:
+        - name: Templates
+      items:
+        - uuid: 1f33f8ca68dd47de9d8ff3bb417ead21
+          name: activeCalls
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.41933.1.3.4.1.0
+          key: activeCalls
+          delay: '30'
+          tags:
+            - tag: Application
+              value: 'Calls Info'
+          triggers:
+            - uuid: aba9f5dc94d543e3a6b495148c519265
+              expression: 'last(/Aligera SNMP/activeCalls)>90'
+              name: 'Active Calls Usage High'
+              priority: HIGH
+            - uuid: 57b2912047a847c59d286242a67b432a
+              expression: 'last(/Aligera SNMP/activeCalls)>115'
+              name: 'Active Calls Usage Very High'
+              priority: DISASTER
+        - uuid: dc312819bf9144549924669018a5fee6
+          name: activeChannels
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.41933.1.3.4.4.0
+          key: activeChannels
+          delay: '30'
+          tags:
+            - tag: Application
+              value: 'Calls Info'
+        - uuid: 63b09089961e44939ecd41245739c7fc
+          name: channelUsage
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.41933.1.3.4.2.0
+          key: channelUsage
+          delay: '30'
+          units: '%'
+          tags:
+            - tag: Application
+              value: 'Calls Info'
+        - uuid: 61288944f0ba4603b3bd3607e8f90bcb
+          name: 'Time since last clear statistics'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.41933.1.2.2.1.3.1
+          key: e1StatsTime
+          delay: '30'
+          tags:
+            - tag: Application
+              value: 'E1 Statistics Time'
+        - uuid: bb3112a67af9473c9b8e7af2c0ce62f0
+          name: usageCPU
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.41933.1.1.6.0
+          key: usageCPU
+          delay: '30'
+          units: '%'
+          tags:
+            - tag: Hardware
+              value: 'Usage Status'
+          triggers:
+            - uuid: 4264a30aeb554ecbbe9e075281bfe746
+              expression: 'last(/Aligera SNMP/usageCPU,#5)>70'
+              name: 'CPU Usage High'
+              priority: HIGH
+        - uuid: 8f937b4dec7a474e886802905e938398
+          name: usageDisk
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.41933.1.1.8.0
+          key: usageDisk
+          delay: '30'
+          units: '%'
+          tags:
+            - tag: Hardware
+              value: 'Usage Status'
+          triggers:
+            - uuid: 06445471b52941d39b139b012140c9ca
+              expression: 'last(/Aligera SNMP/usageDisk,#5)>70'
+              name: 'Disk Usage High'
+              priority: HIGH
+        - uuid: 01f4f676c599462bb9a4a93415cc9eae
+          name: usageMemory
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.41933.1.1.7.0
+          key: usageMemory
+          delay: '30'
+          units: '%'
+          tags:
+            - tag: Hardware
+              value: 'Usage Status'
+          triggers:
+            - uuid: 65a0e01e665e4f6a919fec5461d886b2
+              expression: 'last(/Aligera SNMP/usageMemory,#5)>70'
+              name: 'Memory Usage High'
+              priority: HIGH
+      discovery_rules:
+        - uuid: 80524a8f67c94afd841044f541175e60
+          name: e1AISEvents
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.41933.1.2.2.1.9]'
+          key: e1AISEvents
+          delay: '30'
+          item_prototypes:
+            - uuid: ea220174200e496f9f960752b0a71cfa
+              name: 'AIS Events E1 {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.41933.1.2.2.1.9.{#SNMPINDEX}'
+              key: 'e1AISEvents[{#SNMPINDEX}]'
+              delay: '30'
+              tags:
+                - tag: Application
+                  value: 'E1 Status'
+              trigger_prototypes:
+                - uuid: d7b1dba065d84247b7bd92924ee090fd
+                  expression: 'change(/Aligera SNMP/e1AISEvents[{#SNMPINDEX}])>0'
+                  name: 'E1 {#SNMPINDEX} AIS Events'
+                  priority: INFO
+        - uuid: 57bf8f05a74f4f86a8996fa74e747b40
+          name: e1Alarms
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.41933.1.2.2.1.2]'
+          key: e1Alarms
+          delay: '30'
+          description: .1.3.6.1.4.1.41933.1.2.2.1.2
+          item_prototypes:
+            - uuid: af5b3721e7e043f4afd08cce9dabfebb
+              name: 'Status E1 {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.41933.1.2.2.1.2.{#SNMPINDEX}'
+              key: 'E1Alarms[{#SNMPINDEX}]'
+              delay: '30'
+              tags:
+                - tag: Application
+                  value: 'E1 Status'
+              trigger_prototypes:
+                - uuid: 8cb69aae98a347a281df95d43c6e8f60
+                  expression: 'last(/Aligera SNMP/E1Alarms[{#SNMPINDEX}])=2'
+                  name: 'E1 {#SNMPINDEX} AIS Alarm'
+                  priority: HIGH
+                - uuid: 33ab333a339f4548888699b2be3709fc
+                  expression: 'last(/Aligera SNMP/E1Alarms[{#SNMPINDEX}])=3'
+                  name: 'E1 {#SNMPINDEX} BFAE Alarm'
+                  priority: HIGH
+                - uuid: a40b07c7e66d4145a39e2ffb9a785b82
+                  expression: 'last(/Aligera SNMP/E1Alarms[{#SNMPINDEX}])=1'
+                  name: 'E1 {#SNMPINDEX} LOS Alarm'
+                  priority: HIGH
+                - uuid: 53127c4f59f44e18bf8291806d5e0c5a
+                  expression: 'last(/Aligera SNMP/E1Alarms[{#SNMPINDEX}])=4'
+                  name: 'E1 {#SNMPINDEX} MFAE Alarm'
+                  priority: HIGH
+        - uuid: f279c8bf7e484666b461fcb02bba1da7
+          name: e1BFAEEvents
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.41933.1.2.2.1.11]'
+          key: e1BFAEEvents
+          delay: '30'
+          item_prototypes:
+            - uuid: 0ebb170f1b9942d39c712e003c567280
+              name: 'BFAE Events E1 {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.41933.1.2.2.1.11.{#SNMPINDEX}'
+              key: 'e1BFAEEvents[{#SNMPINDEX}]'
+              delay: '30'
+              tags:
+                - tag: Application
+                  value: 'E1 Status'
+              trigger_prototypes:
+                - uuid: 1eba7ff498614bc887ec7009cbc40129
+                  expression: 'change(/Aligera SNMP/e1BFAEEvents[{#SNMPINDEX}])>0'
+                  name: 'E1 {#SNMPINDEX} BFAE Events'
+                  priority: INFO
+        - uuid: 2a8a5ea8dc4849e3b2facbd68b0ad23e
+          name: e1CodeViolations
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.41933.1.2.2.1.4]'
+          key: e1CodeViolations
+          delay: '30'
+          item_prototypes:
+            - uuid: f416b400b7f44efebed6f1281c109059
+              name: 'Code Violations E1 {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.41933.1.2.2.1.4.{#SNMPINDEX}'
+              key: 'e1CodeViolations[{#SNMPINDEX}]'
+              delay: '30'
+              tags:
+                - tag: Application
+                  value: 'E1 Status'
+              trigger_prototypes:
+                - uuid: ecfa0439dea84a93a3f6132af75f5941
+                  expression: 'change(/Aligera SNMP/e1CodeViolations[{#SNMPINDEX}])>0'
+                  name: 'E1 {#SNMPINDEX} Code Violations Events'
+                  priority: INFO
+        - uuid: 2d15194a6b8e4082828eb2e27956ff5e
+          name: e1CRCErrors
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.41933.1.2.2.1.6]'
+          key: e1CRCErrors
+          delay: '30'
+          item_prototypes:
+            - uuid: 28d7b0b4a0234fb38ac1d6b390a71ac8
+              name: 'CRC Errors E1 {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.41933.1.2.2.1.6.{#SNMPINDEX}'
+              key: 'e1CRCErrors[{#SNMPINDEX}]'
+              delay: '30'
+              tags:
+                - tag: Application
+                  value: 'E1 Status'
+              trigger_prototypes:
+                - uuid: 21b896f315f84440b180eaee7af8cc9a
+                  expression: 'change(/Aligera SNMP/e1CRCErrors[{#SNMPINDEX}])>0'
+                  name: 'E1 {#SNMPINDEX} CRC Errors'
+                  priority: INFO
+        - uuid: ad3764b95b544fc7af1adca0300fe20b
+          name: e1LOSEvents
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.41933.1.2.2.1.7]'
+          key: e1LOSEvents
+          delay: '30'
+          item_prototypes:
+            - uuid: 6b27f6c4ac1347ada3f27d2b2a4d45ff
+              name: 'LOS Events E1 {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.41933.1.2.2.1.7.{#SNMPINDEX}'
+              key: 'e1LOSEvents[{#SNMPINDEX}]'
+              delay: '30'
+              tags:
+                - tag: Application
+                  value: 'E1 Status'
+              trigger_prototypes:
+                - uuid: 2cbd9f3207604dffa6783db55f5c212b
+                  expression: 'change(/Aligera SNMP/e1LOSEvents[{#SNMPINDEX}])>0'
+                  name: 'E1 {#SNMPINDEX} LOS Events'
+                  priority: INFO
+        - uuid: 49679c77e6eb49b7a58a1cf63224e5f9
+          name: e1MFAEEvents
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.41933.1.2.2.1.13]'
+          key: e1MFAEEvents
+          delay: '30'
+          item_prototypes:
+            - uuid: a11d8c3d251a42399016617ffa7b9527
+              name: 'MFAE Events E1 {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.41933.1.2.2.1.13.{#SNMPINDEX}'
+              key: 'e1MFAEEvents[{#SNMPINDEX}]'
+              delay: '30'
+              tags:
+                - tag: Application
+                  value: 'E1 Status'
+              trigger_prototypes:
+                - uuid: 972077e0672e4b63b3fa72e4d7fc5f2a
+                  expression: 'change(/Aligera SNMP/e1MFAEEvents[{#SNMPINDEX}])>0'
+                  name: 'E1 {#SNMPINDEX} MFAE Events'
+                  priority: INFO
+        - uuid: df49ad54e708461eb41a039fb4330795
+          name: e1RAIEvents
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.41933.1.2.2.1.15]'
+          key: e1RAIEvents
+          delay: '30'
+          item_prototypes:
+            - uuid: 4b8b163f3c8c40f996bcc8b43315bd93
+              name: 'RAI Events E1 {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.41933.1.2.2.1.15.{#SNMPINDEX}'
+              key: 'e1RAIEvents[{#SNMPINDEX}]'
+              delay: '30'
+              tags:
+                - tag: Application
+                  value: 'E1 Status'
+              trigger_prototypes:
+                - uuid: 7cddc250572a40dc8834a8542c721cdd
+                  expression: 'change(/Aligera SNMP/e1RAIEvents[{#SNMPINDEX}])>0'
+                  name: 'E1 {#SNMPINDEX} RAI Events'
+                  priority: INFO
+        - uuid: 2aff1283347b40c9af424e3ca50aed54
+          name: e1Slips
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.41933.1.2.2.1.5]'
+          key: e1Slips
+          delay: '30'
+          item_prototypes:
+            - uuid: 0ddec29bc12045699808c530bd46f642
+              name: 'Slips E1 {#SNMPINDEX}'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.41933.1.2.2.1.5.{#SNMPINDEX}'
+              key: 'e1Slips[{#SNMPINDEX}]'
+              delay: '30'
+              tags:
+                - tag: Application
+                  value: 'E1 Status'
+              trigger_prototypes:
+                - uuid: 41cdd9c4c17043df99553aba2efa1fc5
+                  expression: 'change(/Aligera SNMP/e1Slips[{#SNMPINDEX}])>0'
+                  name: 'E1 {#SNMPINDEX} Slips'
+                  priority: WARNING
+      macros:
+        - macro: '{$SNMP_COMMUNITY}'
+          value: ####CHANGETHISVALUE####
